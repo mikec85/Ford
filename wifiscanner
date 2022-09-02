@@ -1,0 +1,62 @@
+#include "WiFi.h"
+
+#include <SPI.h>
+
+#include <TFT_eSPI.h>       // Hardware-specific library
+
+TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
+
+boolean found = false;
+
+void setup() {
+  Serial.begin(115200);
+
+  tft.init();
+
+  tft.fillScreen(TFT_BLACK);
+  
+  // Set WiFi to station mode and disconnect from an AP if it was previously connected
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+
+  Serial.println("Setup done");
+}
+
+void loop() {
+  Serial.println("scan start");
+
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0) {
+      Serial.println("no networks found");
+  } else {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i) {
+      
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+      delay(10);
+      if(WiFi.SSID(i) == "Lightning") {
+        found = true;
+        tft.fillScreen(TFT_GREEN);
+      } 
+    }
+    if(found){
+      tft.fillScreen(TFT_GREEN);
+    } else {
+      tft.fillScreen(TFT_RED);
+    }
+    found=false;
+  }
+  Serial.println("");
+
+  // Wait a bit before scanning again
+  delay(5000);
+}
