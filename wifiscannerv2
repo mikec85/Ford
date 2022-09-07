@@ -1,0 +1,124 @@
+#include "WiFi.h"
+
+#include <SPI.h>
+
+#include <TFT_eSPI.h>       // Hardware-specific library
+
+TFT_eSPI tft = TFT_eSPI();  // Invoke custom library
+
+boolean found = false;
+String SSIDs[30];
+String nondups[30];
+//String SSIDName = "cisco";
+String SSIDName = "Lightning";
+
+
+void setup() {
+  Serial.begin(115200);
+
+  tft.init();
+  tft.setRotation(2);
+
+  tft.fillScreen(TFT_BLACK);
+  
+  // Set WiFi to station mode and disconnect from an AP if it was previously connected
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  delay(100);
+
+  Serial.println("Setup done");
+}
+
+void loop() {
+  Serial.println("scan start");
+
+  // WiFi.scanNetworks will return the number of networks found
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0) {
+      Serial.println("no networks found");
+  } else {
+    Serial.print(n);
+    Serial.println(" networks found");
+    tft.setCursor(0, 0, 4);
+    tft.setTextColor(TFT_WHITE, TFT_BLACK);
+    tft.fillScreen(TFT_BLACK);
+    
+    for (int i = 0; i < n; ++i) {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      SSIDs[i] = WiFi.SSID(i);
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == WIFI_AUTH_OPEN)?" ":"*");
+      delay(10);
+
+      if(WiFi.SSID(i) == SSIDName) {  
+        found = true;
+      //  tft.setTextColor(TFT_WHITE, TFT_GREEN);
+      //  tft.println(WiFi.SSID(i));
+      //  //tft.fillScreen(TFT_GREEN);
+      } else {
+      //  tft.setTextColor(TFT_WHITE, TFT_RED);
+      //  tft.println(WiFi.SSID(i));
+      }
+    }
+               
+    if(found){
+      //tft.fillScreen(TFT_GREEN);
+      //tft.drawRect(110,0,135,240,TFT_GREEN);
+      tft.fillRectVGradient(110,0,135,240,TFT_GREEN,TFT_GREEN);
+    } else {
+      //tft.drawRect(110,0,135,240,TFT_RED);
+      tft.fillRectVGradient(110,0,135,240,TFT_RED,TFT_RED);
+      //tft.fillScreen(TFT_RED);
+    }
+    found=false;
+    removeduplicate();
+    for (int i = 0; i < 30; ++i) {
+
+      if(nondups[i] == SSIDName && nondups[i] != "") {
+        found = true;
+        tft.setTextColor(TFT_WHITE, TFT_GREEN);
+        tft.println(nondups[i]);
+        //tft.fillScreen(TFT_GREEN);
+      } else {
+        tft.setTextColor(TFT_WHITE, TFT_RED);
+        tft.println(nondups[i].substring(0,9));
+      }
+      
+    }
+    
+  }
+  Serial.println("");
+
+  // Wait a bit before scanning again
+  delay(5000);
+}
+
+void removeduplicate(){
+
+  for (int i = 0; i < 30; ++i) {
+    nondups[i] = "";
+  }
+  boolean found = false;
+  int lcv = 0;
+  for (int i = 0; i < 30; ++i) {
+    //SSIDs[i]
+    for (int i2 = 0; i2 < 30; ++i2) {
+      if(SSIDs[i] == nondups[i2]) {
+        found = true;
+      }
+      
+    }
+    if(found == false){
+      nondups[lcv] = SSIDs[i];
+      lcv++;
+    }    
+  }
+
+}
+
